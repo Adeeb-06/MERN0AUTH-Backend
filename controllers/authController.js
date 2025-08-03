@@ -1,6 +1,7 @@
 import bcrypt from "bcrypt";
 import userModel from "../models/user.js";
 import jwt from "jsonwebtoken";
+import transporter from "../config/nodemailer.js";
 
 export const registr = async (req, res) => {
     const { name, email, password } = req.body;
@@ -21,6 +22,15 @@ export const registr = async (req, res) => {
         await newUser.save();
 
         const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+
+        const mailOptions = {
+            from: process.env.SENDER_MAIL,
+            to: email,
+            subject: "Welcome to Our Service",
+            text: `Hello ${name},\n\nThank you for registering with us! Your account has been created successfully.\n\nBest regards,\nYour Service Team`
+        }
+
+        await transporter.sendMail(mailOptions);
 
         res.cookie('token', token)
 
@@ -75,3 +85,77 @@ export const logout = async (req, res) => {
     }
 }
 
+
+
+
+export const sendVerifyOtp = async (req, res) => {
+    try {
+        const { userId } = req.body;
+        const user = await userModel.findById(userId);
+
+        if(user.isAccountVerified) {
+            return res.status(400).json({ message: "Account already verified" });
+        } else{
+            const otp = Math.floor(100000 + Math.random() * 900000).toString();
+            const expiry = Date.now() + 10 * 60 * 1000; // 10 minutes
+
+            user.verifyOtp = otp;
+            user.verifyOtpExpiry = expiry;
+            await user.save();
+
+            const mailOptions = {
+                from: process.env.SENDER_MAIL,
+                to: user.email,
+                subject: "Account Verification OTP",
+                text: `Your OTP for account verification is ${otp}. It is valid for 10 minutes.`
+            };
+
+            await transporter.sendMail(mailOptions);
+
+            res.status(200).json({ message: "OTP sent successfully" });
+        }
+
+
+    } catch (error) {
+        console.error("Error sending verification OTP:", error);
+        res.status(500).json({ message: "Internal server error" });
+        
+    }
+}
+
+
+export const verifyEmail = async (req, res) => {
+    const { userId ,otp } = req.body;
+    
+
+    if (!userId || !otp) {
+        return res.status(404).json({ message: "Missing details" });
+    }
+    try {
+        const user = await userModel.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        if(user.verifyOtp==="" || user.verifyOtp !== otp) {
+            return res.status(400).json({ message: "Invalid OTP" });
+        }
+        if (Date.now() > user.verifyOtpExpiry) {
+            return res.status(400).json({ message: "OTP expired" });
+        }
+
+        user.isAccountVerified = true;
+        user.verifyOtp = "";
+        user.verifyOtpExpiry = 0;
+        await user.save();
+
+        res.status(200).json({ message: "Email verified successfully" });
+    } catch (error) {
+        console.error("Error verifying email:", error);
+        res.status(500).json({ message: "Internal server error" });
+        
+    }
+}
+
+
+ 
