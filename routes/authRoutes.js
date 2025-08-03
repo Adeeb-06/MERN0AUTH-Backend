@@ -1,5 +1,5 @@
 import express from "express";
-import { login, logout, registr, sendVerifyOtp, verifyEmail } from "../controllers/authController.js";
+import { login, logout, registr, resetPassword, sendResetOtp, sendVerifyOtp, verifyEmail } from "../controllers/authController.js";
 import userAuth from "../middleware/userAuth.js";
 
 const authRouter = express.Router();
@@ -9,7 +9,7 @@ authRouter.post('/login', login);
 authRouter.post('/logout', logout);
 authRouter.post('/send-verify-otp', userAuth, sendVerifyOtp);
 authRouter.post('/verify-email', userAuth, verifyEmail);
-
-
+authRouter.post('/send-reset-otp', sendResetOtp);
+authRouter.post('/reset-password', resetPassword);
 
 export default authRouter;
