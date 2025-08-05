@@ -30,15 +30,15 @@ export const registr = async (req, res) => {
             text: `Hello ${name},\n\nThank you for registering with us! Your account has been created successfully.\n\nBest regards,\nYour Service Team`
         }
 
-        await transporter.sendMail(mailOptions);
+        // await transporter.sendMail(mailOptions);
 
         res.cookie('token', token)
 
-        res.status(201).json({ message: "User registered successfully" });
+        res.status(201).json({ success: true, message: "User registered successfully" });
     } catch (error) {
         console.log("Registration error:", error);
-        res.status(500).json({ message: "Internal server error" });
-        
+        res.status(500).json({ success: false, message: "Internal server error" });
+
     }
 }
 
@@ -67,10 +67,10 @@ export const login = async (req, res) => {
 
         res.cookie('token', token)
 
-        res.status(200).json({ message: "Login successful" });
+        res.status(200).json({ success: true, message: "Login successful" });
     } catch (error) {
         console.error("Login error:", error);
-        res.status(500).json({ message: "Internal server error" });
+        res.status(500).json({ success: false, message: "Internal server error" });
     }
 }
 
@@ -225,5 +225,15 @@ export const resetPassword = async (req, res) => {
         console.error("Error resetting password:", error);
         res.status(500).json({ message: "Internal server error" });
         
+    }
+}
+
+
+export const isAuthenticated = async (req, res) => {
+    try {
+        res.status(200).json({ success: true, message: "User is authenticated" });
+    } catch (error) {
+        console.error("Error checking authentication:", error);
+        res.status(500).json({ success: false, message: "Internal server error" });
     }
 }
