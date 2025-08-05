@@ -6,7 +6,6 @@ const userAuth = async(req, res, next) => {
     if (!token) {
         return res.status(401).json({ message: "Unauthorized access" });
     }
-
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         if(decoded.id){
@@ -21,4 +20,4 @@ const userAuth = async(req, res, next) => {
     }
 }
 
-export default userAuth;
+export default userAuth;       

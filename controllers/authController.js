@@ -13,7 +13,7 @@ export const registr = async (req, res) => {
 
         const existingUser = await userModel.findOne({ email });
 
-        if(existingUser) {
+        if (existingUser) {
             return res.status(401).json({ message: "User already exists" });
         }
 
@@ -32,7 +32,13 @@ export const registr = async (req, res) => {
 
         // await transporter.sendMail(mailOptions);
 
-        res.cookie('token', token)
+        res.cookie('token', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
+            maxAge: 86400000,
+        });
+
 
         res.status(201).json({ success: true, message: "User registered successfully" });
     } catch (error) {
@@ -65,7 +71,13 @@ export const login = async (req, res) => {
 
         const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
-        res.cookie('token', token)
+        res.cookie('token', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
+            maxAge: 86400000,
+        });
+
 
         res.status(200).json({ success: true, message: "Login successful" });
     } catch (error) {
@@ -77,8 +89,13 @@ export const login = async (req, res) => {
 
 export const logout = async (req, res) => {
     try {
-        res.clearCookie('token');
-        res.status(200).json({ message: "Logout successful" });
+        res.clearCookie('token', {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
+            maxAge: 86400000,
+        });
+        res.status(200).json({ success: 'true', message: "Logout successful" });
     } catch (error) {
         console.error("Logout error:", error);
         res.status(500).json({ message: "Internal server error" });
@@ -93,9 +110,9 @@ export const sendVerifyOtp = async (req, res) => {
         const { userId } = req.body;
         const user = await userModel.findById(userId);
 
-        if(user.isAccountVerified) {
+        if (user.isAccountVerified) {
             return res.status(400).json({ message: "Account already verified" });
-        } else{
+        } else {
             const otp = Math.floor(100000 + Math.random() * 900000).toString();
             const expiry = Date.now() + 10 * 60 * 1000; // 10 minutes
 
@@ -119,14 +136,14 @@ export const sendVerifyOtp = async (req, res) => {
     } catch (error) {
         console.error("Error sending verification OTP:", error);
         res.status(500).json({ message: "Internal server error" });
-        
+
     }
 }
 
 
 export const verifyEmail = async (req, res) => {
-    const { userId ,otp } = req.body;
-    
+    const { userId, otp } = req.body;
+
 
     if (!userId || !otp) {
         return res.status(404).json({ message: "Missing details" });
@@ -137,7 +154,7 @@ export const verifyEmail = async (req, res) => {
             return res.status(404).json({ message: "User not found" });
         }
 
-        if(user.verifyOtp==="" || user.verifyOtp !== otp) {
+        if (user.verifyOtp === "" || user.verifyOtp !== otp) {
             return res.status(400).json({ message: "Invalid OTP" });
         }
         if (Date.now() > user.verifyOtpExpiry) {
@@ -153,7 +170,7 @@ export const verifyEmail = async (req, res) => {
     } catch (error) {
         console.error("Error verifying email:", error);
         res.status(500).json({ message: "Internal server error" });
-        
+
     }
 }
 
@@ -166,7 +183,7 @@ export const sendResetOtp = async (req, res) => {
     }
 
     try {
-        const user = await userModel.findOne({email})
+        const user = await userModel.findOne({ email })
         if (!user) {
             return res.status(404).json({ message: "User not found" });
         }
@@ -187,7 +204,7 @@ export const sendResetOtp = async (req, res) => {
     } catch (error) {
         console.error("Error sending reset OTP:", error);
         res.status(500).json({ message: "Internal server error" });
-        
+
     }
 }
 
@@ -207,7 +224,7 @@ export const resetPassword = async (req, res) => {
 
         if (user.resetOtp === "" || user.resetOtp !== otp) {
             return res.status(400).json({ message: "Invalid OTP" });
-            
+
         }
 
         if (Date.now() > user.resetOtpExpiry) {
@@ -224,7 +241,7 @@ export const resetPassword = async (req, res) => {
     } catch (error) {
         console.error("Error resetting password:", error);
         res.status(500).json({ message: "Internal server error" });
-        
+
     }
 }
 
